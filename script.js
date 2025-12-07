@@ -1,179 +1,156 @@
-// --- VARIABLES GLOBALES ET ÉTAT ---
-let currentMode = 'scroll'; // Peut être 'scroll' ou 'write'
-let palmRejection = false;  // Désactivé par défaut (accepte tous les stylets)
+// --- VARIABLES GLOBALES ---
+let currentMode = 'scroll';
+let palmRejection = false;
+let pointsBuffer = []; // Tampon pour stocker les points avant de les dessiner
+let isDrawing = false;
+let lastPos = { x: 0, y: 0 }; // Dernière position connue pour lier les traits
 
-// --- LISTES DE DONNÉES ---
 const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
-
-// La liste complète des 100 mots du quotidien
 const words = [
-    // JOURS
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-    // MOIS
     "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
     "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
-    // SAISONS & NATURE
     "Printemps", "Ete", "Automne", "Hiver",
     "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
     "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
-    // POLITESSE & EMOTIONS
     "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
     "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    // FAMILLE & ECOLE
     "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
     "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
     "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
-    // ANIMAUX
     "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
     "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
     "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
-    // NOURRITURE
     "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
     "Carotte", "Patate", "Tomate", "Salade", "Radis",
     "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
-    // TRANSPORTS
     "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
 
-// --- INITIALISATION ---
 let currentIndex = 0;
 let currentList = letters;
 let isUpperCase = false;
-let isDrawing = false;
 
 const canvas = document.getElementById('drawingCanvas');
 const ctx = canvas.getContext('2d');
 const textContainer = document.getElementById('textContainer');
 const sheet = document.getElementById('sheet');
 
+// --- INITIALISATION ---
 function init() {
-    // Écouteurs pour les menus déroulants
     document.getElementById('typeSelect').addEventListener('change', changeType);
     document.getElementById('styleSelect').addEventListener('change', updateContent);
     
     // GESTION DU DESSIN (POINTER EVENTS)
-    // Pointer Events gèrent à la fois la souris, le tactile et le stylet
     canvas.addEventListener('pointerdown', startPosition);
-    canvas.addEventListener('pointerup', endPosition);
-    canvas.addEventListener('pointermove', draw);
+    // On utilise 'window' pour pointerup/out pour être sûr de capturer le relâchement même hors canvas
+    window.addEventListener('pointerup', endPosition);
+    canvas.addEventListener('pointermove', collectPoints); // On ne dessine pas, on collecte
+    window.addEventListener('pointercancel', endPosition);
     
-    // Cas de sortie (si le stylet sort de l'écran)
-    canvas.addEventListener('pointercancel', endPosition);
-    canvas.addEventListener('pointerout', endPosition);
-
-    // Redimensionnement
-    window.addEventListener('resize', () => { 
-        resizeCanvas(); 
-        // Note : on ne recharge pas le contenu au resize pour ne pas perdre le dessin
-    });
+    window.addEventListener('resize', () => { resizeCanvas(); });
     
-    // Démarrage par défaut en mode Scroll pour permettre de voir la page
     setMode('scroll');
     updateContent(); 
+    
+    // Démarrage de la boucle de dessin haute performance
+    drawFrame();
 }
 
-// --- GESTION DES MODES (SCROLL vs ÉCRIRE) ---
+// --- BOUCLE DE DESSIN (RENDU) ---
+// Cette fonction tourne en boucle 60 fois par seconde
+function drawFrame() {
+    // S'il y a des points en attente dans le tampon
+    if (pointsBuffer.length > 0) {
+        ctx.beginPath();
+        ctx.moveTo(lastPos.x, lastPos.y); // On part du dernier point connu
+
+        // On trace des lignes vers tous les nouveaux points collectés
+        for (let i = 0; i < pointsBuffer.length; i++) {
+            ctx.lineTo(pointsBuffer[i].x, pointsBuffer[i].y);
+        }
+        
+        ctx.stroke(); // On dessine tout d'un coup (beaucoup plus rapide)
+        
+        // On met à jour la dernière position connue avec le dernier point du tampon
+        lastPos = pointsBuffer[pointsBuffer.length - 1];
+        // On vide le tampon pour le prochain tour
+        pointsBuffer = [];
+    }
+
+    // On demande au navigateur de rappeler cette fonction à la prochaine image
+    requestAnimationFrame(drawFrame);
+}
+
+
+// --- GESTION DES MODES ---
 function setMode(mode) {
     currentMode = mode;
-    
-    // Mise à jour visuelle des boutons (Vert si actif, Gris sinon)
-    const btnScroll = document.getElementById('btnScroll');
-    const btnWrite = document.getElementById('btnWrite');
-    const palmOption = document.getElementById('palmOption');
-
-    if (mode === 'scroll') {
-        btnScroll.className = 'tool-btn active';
-        btnWrite.className = 'tool-btn';
-        palmOption.style.display = 'none'; // On cache l'option palm rejection
-        
-        // Retrait de la classe CSS sur la feuille
-        sheet.classList.remove('write-mode'); 
-    } else {
-        btnScroll.className = 'tool-btn';
-        btnWrite.className = 'tool-btn active';
-        palmOption.style.display = 'flex'; // On affiche l'option
-        
-        // Ajout de la classe CSS qui active le canvas (pointer-events: auto)
-        sheet.classList.add('write-mode');
-    }
+    document.getElementById('btnScroll').className = (mode === 'scroll') ? 'tool-btn active' : 'tool-btn';
+    document.getElementById('btnWrite').className = (mode === 'write') ? 'tool-btn active' : 'tool-btn';
+    document.getElementById('palmOption').style.display = (mode === 'write') ? 'flex' : 'none';
+    if (mode === 'write') { sheet.classList.add('write-mode'); } else { sheet.classList.remove('write-mode'); }
 }
 
-// Mise à jour de l'option Palm Rejection depuis la case à cocher
 function updatePalm() {
     palmRejection = document.getElementById('checkPalm').checked;
 }
 
-// --- FONCTIONS DE DESSIN ---
-
+// --- FONCTIONS DE DESSIN (EVENEMENTS) ---
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
-    return { 
-        x: e.clientX - rect.left, 
-        y: e.clientY - rect.top 
-    };
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
 }
 
 function startPosition(e) {
-    // SÉCURITÉ 1 : Si on est en mode scroll, on ne dessine jamais
     if (currentMode !== 'write') return;
-
-    // SÉCURITÉ 2 : PALM REJECTION
-    // Si la case est cochée ET que l'écran détecte autre chose qu'un stylet ('pen'), on ignore
     if (palmRejection && e.pointerType !== 'pen') return;
+    // Pour les stylets passifs, on accepte 'touch' si palmRejection est faux
+    if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return; 
 
-    // Si on passe les sécurités, on bloque le navigateur (zoom, sélection) et on dessine
     e.preventDefault(); 
     isDrawing = true;
-    draw(e);
+    
+    // On définit le point de départ
+    lastPos = getPos(e);
+    pointsBuffer.push(lastPos); // On l'ajoute au tampon pour le dessiner tout de suite
 }
 
-function endPosition() {
-    isDrawing = false;
-    ctx.beginPath();
+function endPosition(e) {
+    if(isDrawing) {
+        isDrawing = false;
+        pointsBuffer = []; // On vide le tampon par sécurité
+    }
 }
 
-function draw(e) {
-    // 1. Vérifications de sécurité (comme avant)
+// Cette fonction ne dessine PAS, elle stocke juste les points très vite
+function collectPoints(e) {
     if (!isDrawing) return;
     if (currentMode !== 'write') return;
     if (palmRejection && e.pointerType !== 'pen') return;
+     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return;
 
     e.preventDefault();
 
-    // 2. RÉCUPÉRATION DES POINTS MANQUANTS (High Precision)
-    // Les tablettes capturent plus de points que le navigateur n'en affiche.
-    // On va chercher ces points "cachés" (coalesced events) pour combler les trous.
-    let events = [e];
+    // Récupération des points "cachés" (haute précision)
     if (e.getCoalescedEvents) {
-        events = e.getCoalescedEvents();
+        let events = e.getCoalescedEvents();
+        for(let event of events) {
+            pointsBuffer.push(getPos(event));
+        }
+    } else {
+        // Fallback si la tablette ne supporte pas coalesced events
+        pointsBuffer.push(getPos(e));
     }
-
-    // 3. ON DESSINE TOUT D'UN COUP
-    events.forEach(event => {
-        const pos = getPos(event);
-        
-        ctx.lineTo(pos.x, pos.y);
-        ctx.stroke();
-        
-        // On recolle le point de départ pour le prochain petit trait
-        ctx.beginPath();
-        ctx.moveTo(pos.x, pos.y);
-    });
 }
 
 
-// --- GESTION DU CANVAS ET DU CONTENU ---
-
+// --- RESTE DU CODE (CONTENU, NAV) ---
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    
-    // Configuration du trait (Gros feutre)
-    ctx.lineWidth = 12; 
-    ctx.lineCap = 'round'; 
-    ctx.lineJoin = 'round'; 
-    ctx.strokeStyle = '#2c3e50'; // Gris foncé presque noir
+    ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#2c3e50'; 
 }
 
 function changeType() {
@@ -187,85 +164,42 @@ function changeType() {
 
 function changeCase() {
     isUpperCase = !isUpperCase;
-    document.getElementById('btnCase').innerText = isUpperCase ? "Passer en Minuscules" : "Passer en Majuscules";
+    document.getElementById('btnCase').innerText = isUpperCase ? "Min" : "Maj";
     updateContent();
 }
 
 function updateContent() {
-    // On vide le conteneur de texte HTML
     textContainer.innerHTML = ''; 
-    
-    // On efface le dessin précédent
-    // On utilise un petit délai pour être sûr que le DOM est à jour
-    setTimeout(() => { 
-        resizeCanvas(); 
-        ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    }, 10);
+    setTimeout(() => { resizeCanvas(); ctx.clearRect(0, 0, canvas.width, canvas.height); pointsBuffer = [];}, 50);
 
     let rawText = currentList[currentIndex];
-    let textToShow = rawText;
-    
-    // Gestion Majuscule / Minuscule
-    if (isUpperCase) {
-        textToShow = rawText.toUpperCase();
-    } else {
-        // Pour les mots, on garde la casse originale ou on met en minuscule si demandé
-        if(isNaN(textToShow)) textToShow = rawText.toLowerCase();
-    }
+    let textToShow = isUpperCase ? rawText.toUpperCase() : (isNaN(rawText) ? rawText.toLowerCase() : rawText);
     
     const fontStyle = document.getElementById('styleSelect').value;
     const fontClass = (fontStyle === 'cursif') ? 'font-cursif' : 'font-baton';
 
-    // DETECTION DE LA LETTRE "f" EN CURSIF
-    // Si oui, on ajoute la classe 'spread-lines' pour sauter des lignes
     if (fontStyle === 'cursif' && textToShow.toLowerCase().includes('f')) {
         textContainer.classList.add('spread-lines');
     } else {
         textContainer.classList.remove('spread-lines');
     }
 
-    // --- BOUCLE DE GÉNÉRATION (TOUJOURS 12 FOIS) ---
     let repetitions = 12; 
     for (let i = 0; i < repetitions; i++) {
-        // Calcul de l'opacité (Dégradé)
-        let opacity = 1;
-        if (i === 0) opacity = 1;         // Modèle noir
-        else if (i < 3) opacity = 0.4;    // Gris moyen
-        else opacity = 0.08;              // Gris très pâle
-
-        // Création des éléments HTML
+        let opacity = (i === 0) ? 1 : (i < 3 ? 0.4 : 0.08);
         let box = document.createElement('div');
         box.className = `letter-box ${fontClass}`;
-        
         let span = document.createElement('span');
         span.className = 'letter-content';
         span.innerText = textToShow;
         span.style.color = (i===0) ? "black" : `rgba(0, 0, 0, ${opacity})`;
-        
         box.appendChild(span);
         textContainer.appendChild(box);
     }
 }
 
-// --- NAVIGATION ---
-function nextItem() { 
-    if (currentIndex < currentList.length - 1) { 
-        currentIndex++; 
-        updateContent(); 
-    } 
-}
+function nextItem() { if (currentIndex < currentList.length - 1) { currentIndex++; updateContent(); } }
+function previousItem() { if (currentIndex > 0) { currentIndex--; updateContent(); } }
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); pointsBuffer = []; }
 
-function previousItem() { 
-    if (currentIndex > 0) { 
-        currentIndex--; 
-        updateContent(); 
-    } 
-}
-
-function clearCanvas() { 
-    ctx.clearRect(0, 0, canvas.width, canvas.height); 
-}
-
-// --- LANCEMENT ---
 window.onload = init;
-

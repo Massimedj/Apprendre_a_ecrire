@@ -251,3 +251,12 @@ canvas {
     touch-action: none;   /* Bloque le scroll pour dessiner */
     cursor: pen;
 }
+
+/* Bouton Écouter (Violet) */
+.speak { 
+    background-color: #9b59b6; 
+    color: white;
+}
+.speak:hover {
+    background-color: #8e44ad;
+}

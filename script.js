@@ -28,6 +28,7 @@ const words = [
     "Vélo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
 
+
 let currentIndex = 0;
 let currentList = letters;
 let isUpperCase = false;
@@ -42,7 +43,6 @@ function init() {
     document.getElementById('typeSelect').addEventListener('change', changeType);
     document.getElementById('styleSelect').addEventListener('change', updateContent);
     
-    // Événements Pointer (Stylet/Doigt/Souris)
     canvas.addEventListener('pointerdown', startPosition);
     window.addEventListener('pointerup', endPosition);
     canvas.addEventListener('pointermove', draw);
@@ -50,13 +50,32 @@ function init() {
     
     window.addEventListener('resize', () => { resizeCanvas(); });
     
-    // Configuration initiale du trait
+    // Config trait
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
     setMode('scroll');     
     setTool('pen');        
     updateContent(); 
+}
+
+// --- SYNTHÈSE VOCALE (NOUVEAU) ---
+function readContent() {
+    // On annule si une lecture est déjà en cours
+    window.speechSynthesis.cancel();
+
+    let rawText = currentList[currentIndex];
+    
+    // Création du message vocal
+    let utterance = new SpeechSynthesisUtterance(rawText);
+    
+    // Configuration en Français
+    utterance.lang = 'fr-FR'; 
+    utterance.rate = 0.8; // Vitesse un peu lente (0.8) pour bien comprendre
+    utterance.pitch = 1;  // Tonalité normale
+    
+    // Lancer la lecture
+    window.speechSynthesis.speak(utterance);
 }
 
 // --- GESTION DES MODES ET OUTILS ---
@@ -82,8 +101,7 @@ function updatePalm() {
     palmRejection = document.getElementById('checkPalm').checked;
 }
 
-// --- FONCTIONS DE DESSIN (MÉTHODE CLASSIQUE ET FLUIDE) ---
-
+// --- DESSIN ---
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -91,25 +109,21 @@ function getPos(e) {
 
 function startPosition(e) {
     if (currentMode !== 'write') return;
-    // Vérification du stylet
     if (palmRejection && e.pointerType !== 'pen') return;
     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return; 
 
     e.preventDefault(); 
     isDrawing = true;
     
-    // On commence le tracé immédiatement
     const pos = getPos(e);
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
-    
-    // Astuce : on fait un tout petit trait tout de suite pour faire un point si on tape juste
     draw(e); 
 }
 
 function endPosition() {
     isDrawing = false;
-    ctx.beginPath(); // Coupe le chemin pour ne pas relier au prochain trait
+    ctx.beginPath(); 
 }
 
 function draw(e) {
@@ -119,34 +133,28 @@ function draw(e) {
     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return;
 
     e.preventDefault();
-    
     const pos = getPos(e);
 
-    // CONFIGURATION DU STYLE (Appliquée à chaque mouvement pour être sûr)
     if (currentTool === 'eraser') {
         ctx.globalCompositeOperation = "destination-out";
-        ctx.lineWidth = 30; // Gomme un peu plus petite qu'avant (40 -> 30)
+        ctx.lineWidth = 30; 
     } else {
         ctx.globalCompositeOperation = "source-over";
-        ctx.lineWidth = 8;  // Crayon plus fin (12 -> 8)
+        ctx.lineWidth = 8;  
         ctx.strokeStyle = '#2c3e50';
     }
 
-    // DESSIN DIRECT
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
-    
-    // On replace le point de départ pour la suite du mouvement (lissage naturel)
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
 }
 
 
-// --- RESTE DU CODE (CONTENU, NAV) ---
+// --- NAVIGATION ---
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    // On remet les styles de base au cas où
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 }
@@ -162,17 +170,16 @@ function changeType() {
 
 function changeCase() {
     isUpperCase = !isUpperCase;
-    document.getElementById('btnCase').innerText = isUpperCase ? "miniscule" : "MAJUSCULE";
+    document.getElementById('btnCase').innerText = isUpperCase ? "Min" : "Maj";
     updateContent();
 }
 
 function updateContent() {
     textContainer.innerHTML = ''; 
-    // Reset complet du canvas et des modes
     setTimeout(() => { 
         resizeCanvas(); 
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
-        ctx.globalCompositeOperation = "source-over"; // Reset mode normal
+        ctx.globalCompositeOperation = "source-over"; 
     }, 50);
 
     let rawText = currentList[currentIndex];
@@ -201,13 +208,26 @@ function updateContent() {
     }
 }
 
-function nextItem() { if (currentIndex < currentList.length - 1) { currentIndex++; updateContent(); } }
-function previousItem() { if (currentIndex > 0) { currentIndex--; updateContent(); } }
+function nextItem() { 
+    if (currentIndex < currentList.length - 1) { 
+        currentIndex++; 
+        updateContent(); 
+        // Lecture automatique au changement
+        setTimeout(readContent, 200);
+    } 
+}
+
+function previousItem() { 
+    if (currentIndex > 0) { 
+        currentIndex--; 
+        updateContent(); 
+        // Lecture automatique au changement
+        setTimeout(readContent, 200);
+    } 
+}
+
 function clearCanvas() { 
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
 }
 
 window.onload = init;
-
-
-

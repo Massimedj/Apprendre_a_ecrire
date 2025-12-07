@@ -134,19 +134,34 @@ function endPosition() {
 }
 
 function draw(e) {
-    // Si on ne dessine pas, ou mauvais mode, ou rejet de paume actif sur un doigt
+    // 1. Vérifications de sécurité (comme avant)
     if (!isDrawing) return;
     if (currentMode !== 'write') return;
     if (palmRejection && e.pointerType !== 'pen') return;
 
     e.preventDefault();
-    const pos = getPos(e);
-    
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
+
+    // 2. RÉCUPÉRATION DES POINTS MANQUANTS (High Precision)
+    // Les tablettes capturent plus de points que le navigateur n'en affiche.
+    // On va chercher ces points "cachés" (coalesced events) pour combler les trous.
+    let events = [e];
+    if (e.getCoalescedEvents) {
+        events = e.getCoalescedEvents();
+    }
+
+    // 3. ON DESSINE TOUT D'UN COUP
+    events.forEach(event => {
+        const pos = getPos(event);
+        
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        // On recolle le point de départ pour le prochain petit trait
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    });
 }
+
 
 // --- GESTION DU CANVAS ET DU CONTENU ---
 
@@ -253,3 +268,4 @@ function clearCanvas() {
 
 // --- LANCEMENT ---
 window.onload = init;
+

@@ -3,31 +3,23 @@ const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
 
 const words = [
-    // JOURS
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-    // MOIS
     "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
     "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
-    // SAISONS & NATURE
     "Printemps", "Ete", "Automne", "Hiver",
     "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
     "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
-    // POLITESSE & EMOTIONS
     "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
     "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    // FAMILLE & ECOLE
     "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
     "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
     "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
-    // ANIMAUX
     "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
     "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
     "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
-    // NOURRITURE
     "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
     "Carotte", "Patate", "Tomate", "Salade", "Radis",
     "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
-    // TRANSPORTS
     "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
 
@@ -46,26 +38,29 @@ function init() {
     document.getElementById('typeSelect').addEventListener('change', changeType);
     document.getElementById('styleSelect').addEventListener('change', updateContent);
     
-    canvas.addEventListener('mousedown', startPosition);
-    canvas.addEventListener('mouseup', endPosition);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('touchstart', startPosition, {passive: false});
-    canvas.addEventListener('touchend', endPosition);
-    canvas.addEventListener('touchmove', draw, {passive: false});
+    // --- MODIFICATION MAJEURE ICI POUR LE STYLET ---
+    // On utilise "pointer" au lieu de "mouse" ou "touch"
+    // Cela permet de distinguer le doigt du stylet
+    canvas.addEventListener('pointerdown', startPosition);
+    canvas.addEventListener('pointerup', endPosition);
+    canvas.addEventListener('pointermove', draw);
     
+    // On gère aussi le cas où le stylet sort de l'écran
+    canvas.addEventListener('pointercancel', endPosition);
+    canvas.addEventListener('pointerout', endPosition);
+
     window.addEventListener('resize', () => {
         resizeCanvas();
-        updateContent(); 
+        // Pas d'updateContent pour ne pas effacer le dessin en cours de rotation
     });
     
-    resizeCanvas();
-    updateContent();
+    updateContent(); 
 }
 
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    // TRAIT TRÈS ÉPAIS (12)
+    
     ctx.lineWidth = 12; 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -89,12 +84,17 @@ function changeCase() {
 }
 
 function updateContent() {
-    clearCanvas();
     textContainer.innerHTML = ''; 
+    // On efface le canvas uniquement lors d'un changement de contenu
+    // resizeCanvas le fera aussi, mais par sécurité :
+    setTimeout(() => {
+        resizeCanvas();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }, 10);
 
     let rawText = currentList[currentIndex];
-    
     let textToShow = rawText;
+    
     if (isUpperCase) {
         textToShow = rawText.toUpperCase();
     } else {
@@ -104,29 +104,18 @@ function updateContent() {
     const fontStyle = document.getElementById('styleSelect').value;
     const fontClass = (fontStyle === 'cursif') ? 'font-cursif' : 'font-baton';
 
-    // DETECTION DU "f"
     if (fontStyle === 'cursif' && textToShow.toLowerCase().includes('f')) {
         textContainer.classList.add('spread-lines');
     } else {
         textContainer.classList.remove('spread-lines');
     }
 
-    // Nombre de répétitions très réduit pour le mode Géant
-    let repetitions = 5; 
-    
-    if (textContainer.classList.contains('spread-lines')) {
-        repetitions = 3; // Avec saut de ligne, on en met peu
-    } else if (textToShow.length > 5) {
-        repetitions = 3;
-    }
-    
-    if (textToShow.length > 8) repetitions = 2; // Mots très longs
+    let repetitions = 12; 
 
     for (let i = 0; i < repetitions; i++) {
         let opacity = 1;
-        
         if (i === 0) opacity = 1;         
-        else if (i < 2) opacity = 0.4; // Moins de nuances car moins de mots   
+        else if (i < 3) opacity = 0.4;    
         else opacity = 0.08;              
 
         let box = document.createElement('div');
@@ -157,14 +146,26 @@ function previousItem() {
 }
 
 function getPos(e) {
+    // Calcul précis de la position pour PointerEvent
     const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+    return { 
+        x: e.clientX - rect.left, 
+        y: e.clientY - rect.top 
+    };
 }
 
+// --- FONCTIONS DE DESSIN INTELLIGENTES ---
+
 function startPosition(e) {
-    if(e.target == canvas) e.preventDefault();
+    // LE SECRET EST ICI :
+    // Si c'est du tactile (le doigt), on ne dessine pas !
+    // On laisse le navigateur gérer (ce qui permettra de scroller avec le doigt)
+    if (e.pointerType === 'touch') return;
+
+    // Si c'est un stylet ('pen') ou une souris ('mouse' pour tester sur PC), on dessine
+    // On empêche le comportement par défaut (scroll, sélection) seulement si on dessine
+    e.preventDefault(); 
+    
     isDrawing = true;
     draw(e);
 }
@@ -175,9 +176,12 @@ function endPosition() {
 }
 
 function draw(e) {
-    if (!isDrawing) return;
-    if(e.type.includes('touch')) e.preventDefault();
+    // Si on n'est pas en train de dessiner OU si c'est un doigt, on arrête tout
+    if (!isDrawing || e.pointerType === 'touch') return;
+
+    e.preventDefault();
     const pos = getPos(e);
+    
     ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
     ctx.beginPath();

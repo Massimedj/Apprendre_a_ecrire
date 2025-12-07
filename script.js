@@ -2,39 +2,31 @@
 const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
 
-// Liste de ~100 mots du quotidien
 const words = [
     // JOURS
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-    
     // MOIS
     "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
     "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
-    
     // SAISONS & NATURE
     "Printemps", "Ete", "Automne", "Hiver",
     "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
     "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
-    
     // POLITESSE & EMOTIONS
     "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
     "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    
     // FAMILLE & ECOLE
     "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
     "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
     "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
-    
     // ANIMAUX
     "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
     "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
     "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
-    
     // NOURRITURE
     "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
     "Carotte", "Patate", "Tomate", "Salade", "Radis",
     "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
-    
     // TRANSPORTS
     "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
@@ -73,7 +65,8 @@ function init() {
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    ctx.lineWidth = 5;
+    // TRAIT TRÈS ÉPAIS (12)
+    ctx.lineWidth = 12; 
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#2c3e50'; 
@@ -101,7 +94,6 @@ function updateContent() {
 
     let rawText = currentList[currentIndex];
     
-    // Gestion Majuscule/Minuscule
     let textToShow = rawText;
     if (isUpperCase) {
         textToShow = rawText.toUpperCase();
@@ -112,35 +104,29 @@ function updateContent() {
     const fontStyle = document.getElementById('styleSelect').value;
     const fontClass = (fontStyle === 'cursif') ? 'font-cursif' : 'font-baton';
 
-    // --- LOGIQUE INTELLIGENTE POUR LE "f" ---
-    // Si on est en Cursif ET que le texte contient la lettre "f"
+    // DETECTION DU "f"
     if (fontStyle === 'cursif' && textToShow.toLowerCase().includes('f')) {
-        // On ajoute une classe spéciale au conteneur qui va forcer le saut de ligne
         textContainer.classList.add('spread-lines');
     } else {
-        // Sinon on l'enlève pour revenir à la normale
         textContainer.classList.remove('spread-lines');
     }
 
-    // ADAPTATION DU NOMBRE DE MOTS
-    let repetitions = 12; 
+    // Nombre de répétitions très réduit pour le mode Géant
+    let repetitions = 5; 
     
-    // Si on saute des lignes (mode 'f')
-   
     if (textContainer.classList.contains('spread-lines')) {
-        repetitions = 12;
+        repetitions = 3; // Avec saut de ligne, on en met peu
     } else if (textToShow.length > 5) {
-        repetitions = 8;
+        repetitions = 3;
     }
     
-    if (textToShow.length > 8) repetitions = 5;
+    if (textToShow.length > 8) repetitions = 2; // Mots très longs
 
-    // --- BOUCLE DE CRÉATION ---
     for (let i = 0; i < repetitions; i++) {
         let opacity = 1;
         
         if (i === 0) opacity = 1;         
-        else if (i < 3) opacity = 0.4;    
+        else if (i < 2) opacity = 0.4; // Moins de nuances car moins de mots   
         else opacity = 0.08;              
 
         let box = document.createElement('div');
@@ -155,7 +141,7 @@ function updateContent() {
         textContainer.appendChild(box);
     }
 }
-	
+
 function nextItem() {
     if (currentIndex < currentList.length - 1) {
         currentIndex++;

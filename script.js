@@ -1,12 +1,10 @@
 // --- VARIABLES GLOBALES ---
 let currentMode = 'scroll';   // 'scroll' ou 'write'
-let currentTool = 'pen';      // NOUVEAU : 'pen' (crayon) ou 'eraser' (gomme)
+let currentTool = 'pen';      // 'pen' (crayon) ou 'eraser' (gomme)
 let palmRejection = false;
-let pointsBuffer = []; 
 let isDrawing = false;
-let lastPos = { x: 0, y: 0 }; 
 
-// (Vos listes letters, numbers, words restent ici...)
+// Listes de contenu
 const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
 const words = [
@@ -44,57 +42,22 @@ function init() {
     document.getElementById('typeSelect').addEventListener('change', changeType);
     document.getElementById('styleSelect').addEventListener('change', updateContent);
     
+    // Événements Pointer (Stylet/Doigt/Souris)
     canvas.addEventListener('pointerdown', startPosition);
     window.addEventListener('pointerup', endPosition);
-    canvas.addEventListener('pointermove', collectPoints); 
+    canvas.addEventListener('pointermove', draw);
     window.addEventListener('pointercancel', endPosition);
     
     window.addEventListener('resize', () => { resizeCanvas(); });
     
-    // Configuration initiale du canvas
+    // Configuration initiale du trait
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     
-    setMode('scroll');     // On commence en mode scroll
-    setTool('pen');        // Outil par défaut : crayon
+    setMode('scroll');     
+    setTool('pen');        
     updateContent(); 
-    
-    drawFrame();
 }
-
-// --- BOUCLE DE DESSIN (C'EST ICI QUE LA MAGIE OPÈRE) ---
-function drawFrame() {
-    if (pointsBuffer.length > 0) {
-        ctx.beginPath();
-        ctx.moveTo(lastPos.x, lastPos.y);
-
-        for (let i = 0; i < pointsBuffer.length; i++) {
-            ctx.lineTo(pointsBuffer[i].x, pointsBuffer[i].y);
-        }
-        
-        // --- CHANGEMENT MAJEUR ICI POUR LA GOMME ---
-        if (currentTool === 'eraser') {
-            // Mode GOMME : "destination-out" rend transparent ce qu'on touche
-            ctx.globalCompositeOperation = "destination-out";
-            // La gomme est plus grosse que le crayon pour être pratique
-            ctx.lineWidth = 40; 
-        } else {
-            // Mode CRAYON : "source-over" dessine par dessus (normal)
-            ctx.globalCompositeOperation = "source-over";
-            ctx.lineWidth = 12; // Taille normale du trait
-            ctx.strokeStyle = '#2c3e50'; // Couleur du trait
-        }
-        // -------------------------------------------
-        
-        ctx.stroke(); 
-        
-        lastPos = pointsBuffer[pointsBuffer.length - 1];
-        pointsBuffer = [];
-    }
-
-    requestAnimationFrame(drawFrame);
-}
-
 
 // --- GESTION DES MODES ET OUTILS ---
 function setMode(mode) {
@@ -102,7 +65,6 @@ function setMode(mode) {
     document.getElementById('btnScroll').className = (mode === 'scroll') ? 'tool-btn active' : 'tool-btn';
     document.getElementById('btnWrite').className = (mode === 'write') ? 'tool-btn active' : 'tool-btn';
     
-    // On affiche les outils d'écriture (crayon/gomme/palm) seulement si on est en mode "Écrire"
     const displayStyle = (mode === 'write') ? 'flex' : 'none';
     document.getElementById('writingTools').style.display = displayStyle;
     document.getElementById('palmOption').style.display = displayStyle;
@@ -110,10 +72,8 @@ function setMode(mode) {
     if (mode === 'write') { sheet.classList.add('write-mode'); } else { sheet.classList.remove('write-mode'); }
 }
 
-// NOUVELLE FONCTION POUR CHOIISIR CRAYON OU GOMME
 function setTool(tool) {
     currentTool = tool;
-    // Met à jour visuellement les boutons
     document.getElementById('btnPen').className = (tool === 'pen') ? 'tool-btn sub-tool active' : 'tool-btn sub-tool';
     document.getElementById('btnEraser').className = (tool === 'eraser') ? 'tool-btn sub-tool active' : 'tool-btn sub-tool';
 }
@@ -122,7 +82,8 @@ function updatePalm() {
     palmRejection = document.getElementById('checkPalm').checked;
 }
 
-// --- FONCTIONS DE DESSIN (EVENEMENTS) ---
+// --- FONCTIONS DE DESSIN (MÉTHODE CLASSIQUE ET FLUIDE) ---
+
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
@@ -130,36 +91,54 @@ function getPos(e) {
 
 function startPosition(e) {
     if (currentMode !== 'write') return;
+    // Vérification du stylet
     if (palmRejection && e.pointerType !== 'pen') return;
     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return; 
 
     e.preventDefault(); 
     isDrawing = true;
-    lastPos = getPos(e);
-    pointsBuffer.push(lastPos);
+    
+    // On commence le tracé immédiatement
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    
+    // Astuce : on fait un tout petit trait tout de suite pour faire un point si on tape juste
+    draw(e); 
 }
 
-function endPosition(e) {
-    if(isDrawing) {
-        isDrawing = false;
-        pointsBuffer = []; 
-    }
+function endPosition() {
+    isDrawing = false;
+    ctx.beginPath(); // Coupe le chemin pour ne pas relier au prochain trait
 }
 
-function collectPoints(e) {
+function draw(e) {
     if (!isDrawing) return;
     if (currentMode !== 'write') return;
     if (palmRejection && e.pointerType !== 'pen') return;
-     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return;
+    if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return;
 
     e.preventDefault();
+    
+    const pos = getPos(e);
 
-    if (e.getCoalescedEvents) {
-        let events = e.getCoalescedEvents();
-        for(let event of events) pointsBuffer.push(getPos(event));
+    // CONFIGURATION DU STYLE (Appliquée à chaque mouvement pour être sûr)
+    if (currentTool === 'eraser') {
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.lineWidth = 30; // Gomme un peu plus petite qu'avant (40 -> 30)
     } else {
-        pointsBuffer.push(getPos(e));
+        ctx.globalCompositeOperation = "source-over";
+        ctx.lineWidth = 8;  // Crayon plus fin (12 -> 8)
+        ctx.strokeStyle = '#2c3e50';
     }
+
+    // DESSIN DIRECT
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    
+    // On replace le point de départ pour la suite du mouvement (lissage naturel)
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
 }
 
 
@@ -167,7 +146,9 @@ function collectPoints(e) {
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    // Les propriétés de style de trait sont maintenant gérées dans drawFrame
+    // On remet les styles de base au cas où
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
 }
 
 function changeType() {
@@ -187,13 +168,11 @@ function changeCase() {
 
 function updateContent() {
     textContainer.innerHTML = ''; 
-    // On réinitialise le canvas et le mode de fusion
+    // Reset complet du canvas et des modes
     setTimeout(() => { 
         resizeCanvas(); 
         ctx.clearRect(0, 0, canvas.width, canvas.height); 
-        pointsBuffer = [];
-        // Important : reset du mode de composition par défaut après un clear
-        ctx.globalCompositeOperation = "source-over";
+        ctx.globalCompositeOperation = "source-over"; // Reset mode normal
     }, 50);
 
     let rawText = currentList[currentIndex];
@@ -224,10 +203,8 @@ function updateContent() {
 
 function nextItem() { if (currentIndex < currentList.length - 1) { currentIndex++; updateContent(); } }
 function previousItem() { if (currentIndex > 0) { currentIndex--; updateContent(); } }
-// Le bouton "Effacer" efface tout d'un coup
 function clearCanvas() { 
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    pointsBuffer = [];
 }
 
 window.onload = init;

@@ -162,7 +162,7 @@ function changeType() {
 
 function changeCase() {
     isUpperCase = !isUpperCase;
-    document.getElementById('btnCase').innerText = isUpperCase ? "Min" : "Maj";
+    document.getElementById('btnCase').innerText = isUpperCase ? "miniscule" : "MAJUSCULE";
     updateContent();
 }
 
@@ -208,3 +208,4 @@ function clearCanvas() {
 }
 
 window.onload = init;
+

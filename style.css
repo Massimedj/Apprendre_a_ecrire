@@ -1,32 +1,29 @@
 /* =========================================
    1. IMPORTATION DES POLICES
    ========================================= */
-
-/* Police Cursive Locale (doit être dans le même dossier) */
 @font-face {
     font-family: 'MaPoliceScolaire';
     src: url('cursive.ttf') format('truetype');
 }
 
-/* Police Bâton (Google Fonts) */
 @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
 
 /* =========================================
-   2. MISE EN PAGE GÉNÉRALE (BODY)
+   2. MISE EN PAGE GÉNÉRALE
    ========================================= */
 body {
     font-family: sans-serif;
-    background-color: #2c3e50; /* Fond gris foncé pour l'application */
+    background-color: #2c3e50;
     display: flex;
     flex-direction: column;
     align-items: center;
     height: 100vh;
     margin: 0;
-    overflow: hidden; /* Empêche le scroll sur la page globale */
+    overflow: hidden; 
 }
 
 /* =========================================
-   3. BARRE DE CONTRÔLES (HAUT)
+   3. CONTRÔLES
    ========================================= */
 .controls-container {
     width: 100%;
@@ -36,7 +33,7 @@ body {
     flex-direction: column;
     align-items: center;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    z-index: 20; /* Reste au-dessus de tout */
+    z-index: 20;
 }
 
 .controls, .buttons {
@@ -56,21 +53,20 @@ select, button {
     cursor: pointer;
 }
 
-/* Couleurs spécifiques des boutons */
 .btn { color: white; border: none; font-weight: bold;}
-.nav { background-color: #3498db; }    /* Bleu */
-.warning { background-color: #e74c3c; } /* Rouge */
-.secondary { background-color: #95a5a6; color: white;} /* Gris */
+.nav { background-color: #3498db; }
+.warning { background-color: #e74c3c; }
+.secondary { background-color: #95a5a6; color: white;}
 
 /* =========================================
-   4. LA FEUILLE D'ÉCRITURE (ZONE PRINCIPALE)
+   4. LA FEUILLE (ZONE DE DÉFILEMENT)
    ========================================= */
 .sheet-container {
     flex-grow: 1;
     width: 100%;
     display: flex;
     justify-content: center;
-    overflow-y: auto; /* Permet de scroller verticalement dans la feuille */
+    overflow-y: auto; 
     padding: 20px;
     box-sizing: border-box;
     background-color: #34495e;
@@ -78,128 +74,98 @@ select, button {
 
 .sheet {
     position: relative;
-    width: 95vw;     /* Largeur de la feuille (presque tout l'écran) */
-    min-height: 80vh; 
+    width: 95vw;
+    
+    /* MODIF 1 : La feuille fait au minimum 3 fois la hauteur de l'écran par défaut */
+    min-height: 300vh; 
+    
     background-color: white;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    cursor: crosshair; /* Curseur en forme de croix pour dessiner */
+    cursor: crosshair;
     
-    /* --- LIGNAGE SEYÈS SUPER GÉANT --- 
-       Hauteur totale d'un bloc : 280px
-       Interligne (espace entre petites lignes) : 70px
-       
-       0px   : Ligne Bleue 3 (Haut)
-       70px  : Ligne Bleue 2
-       140px : Ligne Bleue 1
-       210px : LIGNE VIOLETTE (Base d'écriture)
-       280px : Fin du bloc
-    */
+    /* LIGNAGE SEYÈS GÉANT (Hauteur 280px) */
     background-image: repeating-linear-gradient(
         to bottom,
-        
-        /* Ligne Bleue 3 (Haut du l, b) */
         #a2d9f7 0px, #a2d9f7 2px, transparent 2px,
-        
-        /* Ligne Bleue 2 (Haut du d, t) - à 70px */
         transparent 68px, #a2d9f7 70px, #a2d9f7 72px, transparent 72px,
-        
-        /* Ligne Bleue 1 (Haut du a, c) - à 140px */
         transparent 138px, #a2d9f7 140px, #a2d9f7 142px, transparent 142px,
-        
-        /* LIGNE VIOLETTE (Base) - à 210px - Plus épaisse */
         transparent 208px, #b794f6 210px, #b794f6 214px, transparent 214px,
-        
-        /* Fin du motif à 280px */
         transparent 280px
     );
+    background-size: 100% 280px; 
+    background-position: 0 40px; 
     
-    background-size: 100% 280px; /* Force la répétition exacte tous les 280px */
-    background-position: 0 40px; /* Petite marge en haut de la page */
+    height: auto; 
+    padding-bottom: 0; 
 }
 
 /* =========================================
-   5. CONTENEUR DU TEXTE ET DES BOÎTES
+   5. CONTENU (TEXTE)
    ========================================= */
 .text-container {
-    position: absolute;
-    top: 0; 
-    left: 0; 
+    position: relative; 
     width: 100%; 
-    height: 100%;
+    height: auto;
     
-    /* Marges intérieures pour s'aligner avec le background-position */
     padding-top: 40px; 
     padding-left: 40px;
     
+    /* MODIF 2 : MARGE GIGANTESQUE EN BAS (environ 5 blocs de lignes vides) */
+    padding-bottom: 1500px; 
+    
     box-sizing: border-box;
     display: flex;
-    flex-wrap: wrap; /* Permet d'aller à la ligne automatiquement */
+    flex-wrap: wrap; 
     align-content: flex-start;
+    z-index: 1;
 }
 
-/* La boîte qui contient une lettre ou un mot */
 .letter-box {
-    height: 280px; /* Doit être égal à la hauteur du motif de fond */
-    display: inline-flex; /* La largeur s'adapte au mot */
-    align-items: flex-end; /* On pose le texte en bas de la boîte */
+    height: 280px; 
+    display: inline-flex; 
+    align-items: flex-end; 
     width: auto;           
-    margin-right: 60px; /* Espace entre les exercices */
-    
-    /* Pour débugger, tu peux décommenter la ligne ci-dessous : */
-    /* border: 1px dashed red; */
+    margin-right: 60px; 
 }
 
-/* --- GESTION SPÉCIALE DU 'f' --- */
-/* Ajoute une marge énorme sous la boîte pour sauter une ligne complète */
+/* Saut de ligne géant pour le 'f' */
 .spread-lines .letter-box {
     margin-bottom: 280px; 
 }
 
-/* Le texte lui-même */
 .letter-content {
     position: relative; 
-    white-space: nowrap; /* Empêche le mot de se couper */
+    white-space: nowrap; 
     user-select: none;
     line-height: 1;
 }
 
 /* =========================================
-   6. RÉGLAGES PRÉCIS DES POLICES (ZOOM GÉANT)
+   6. RÉGLAGES POLICES
    ========================================= */
-
-/* --- Cursif (Ta police locale) --- */
 .font-cursif .letter-content {
     font-family: 'MaPoliceScolaire', sans-serif;
-    
-    /* Taille très grande */
     font-size: 160px; 
-    
-    /* Position verticale : 
-       La ligne violette est à 70px du bas de la boîte (280 - 210 = 70).
-       Il faut ajuster 'bottom' pour que le bas de la lettre touche la ligne.
-    */
     bottom: 35px; 
-    
     letter-spacing: 0px; 
 }
 
-/* --- Bâton (Patrick Hand) --- */
 .font-baton .letter-content {
     font-family: 'Patrick Hand', sans-serif;
-    
     font-size: 170px; 
-    bottom: 45px; /* Le bâton nécessite souvent d'être remonté un peu plus */
-    
-    letter-spacing: 5px; /* Un peu d'air entre les lettres bâtons */
+    bottom: 45px; 
+    letter-spacing: 5px; 
 }
 
 /* =========================================
-   7. LE CANVAS DE DESSIN
+   7. CANVAS
    ========================================= */
 canvas {
     position: absolute;
     top: 0; 
     left: 0;
-    z-index: 10; /* Au-dessus du texte */
-    touch-action: none; /* Indispensable pour que le tactile ne scrolle pas */
+    width: 100%;
+    height: 100%;
+    z-index: 10; 
+    touch-action: pan-y; 
 }

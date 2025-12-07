@@ -3,32 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>J'écris sur les lignes</title>
+    <title>Cahier d'Écriture Infini</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="controls-container">
-        <div class="controls">
-            <select id="typeSelect">
-                <option value="lettres">Lettres (a-z)</option>
-                <option value="chiffres">Chiffres (0-9)</option>
-                <option value="mots">Mots</option>
-            </select>
-
-            <select id="styleSelect">
-                <option value="cursif">Attaché (Cursif)</option>
-                <option value="baton">Bâton (Imprimerie)</option>
-            </select>
-            
-            <button onclick="changeCase()" id="btnCase" class="btn secondary">Majuscules</button>
+    <div class="floating-toolbar">
+        <div class="mode-switch">
+            <button id="btnScroll" class="tool-btn active" onclick="setMode('scroll')">🖐️ Bouger</button>
+            <button id="btnWrite" class="tool-btn" onclick="setMode('write')">✏️ Écrire</button>
         </div>
         
+        <div class="palm-rejection" id="palmOption" style="display:none;">
+            <input type="checkbox" id="checkPalm" onchange="updatePalm()">
+            <label for="checkPalm">Stylet Officiel uniquement (bloquer le doigt)</label>
+        </div>
+    </div>
+
+    <div class="controls-container">
+        <div class="controls">
+            <select id="typeSelect"><option value="lettres">Lettres</option><option value="chiffres">Chiffres</option><option value="mots">Mots</option></select>
+            <select id="styleSelect"><option value="cursif">Attaché</option><option value="baton">Bâton</option></select>
+            <button onclick="changeCase()" id="btnCase" class="btn secondary">Maj</button>
+        </div>
         <div class="buttons">
-            <button onclick="previousItem()" class="btn nav">← Préc.</button>
-            <button onclick="clearCanvas()" class="btn warning">Tout Effacer</button>
-            <button onclick="nextItem()" class="btn nav">Suiv. →</button>
+            <button onclick="previousItem()" class="btn nav">←</button>
+            <button onclick="clearCanvas()" class="btn warning">Effacer</button>
+            <button onclick="nextItem()" class="btn nav">→</button>
         </div>
     </div>
 

@@ -10,22 +10,22 @@ const numbers = "0123456789".split("");
 const words = [
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
-    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre",
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
     "Printemps", "Été", "Automne", "Hiver",
     "Soleil", "Lune", "Étoile", "Nuage", "Pluie", "Neige", "Vent",
     "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
     "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
-    "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    "Maman", "Papa", "Bébé", "Papi", "Mamie", "Frere", "Sœur", 
-    "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
+    "Joie", "Rire", "Bisou", "Câlin", "Amour", "Gentil",
+    "Maman", "Papa", "Bébé", "Papi", "Mamie", "Frère", "Soeur", 
+    "Maison", "École", "Maîtresse", "Stylo", "Crayon", "Livre", "Cahier",
     "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
     "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
-    "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
+    "Lion", "Tigre", "Ours", "Girafe", "Éléphant", "Singe",
     "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
     "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
     "Carotte", "Patate", "Tomate", "Salade", "Radis",
-    "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
-    "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
+    "Gâteau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
+    "Vélo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
 
 let currentIndex = 0;
@@ -208,5 +208,6 @@ function clearCanvas() {
 }
 
 window.onload = init;
+
 
 

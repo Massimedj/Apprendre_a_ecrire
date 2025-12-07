@@ -1,0 +1,172 @@
+/* --- IMPORTATION DE LA POLICE LOCALE --- */
+/* C'est ici qu'on charge ton fichier téléchargé */
+@font-face {
+    font-family: 'MaPoliceScolaire';
+    src: url('cursive.ttf') format('truetype');
+}
+
+/* On garde Patrick Hand pour le bâton car elle est bien */
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+body {
+    font-family: sans-serif;
+    background-color: #2c3e50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+}
+
+.controls-container {
+    width: 100%;
+    background-color: #ecf0f1;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 20;
+}
+
+.controls, .buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+select, button {
+    padding: 10px 15px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #bdc3c7;
+    background: white;
+}
+
+/* --- LA FEUILLE --- */
+.sheet-container {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto; 
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #34495e;
+}
+
+.sheet {
+    position: relative;
+    width: 95vw;
+    min-height: 80vh; 
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    cursor: crosshair;
+    
+    /* LIGNAGE SEYÈS ACADÉMIQUE (Hauteur 160px) */
+    /* 0px   : Ligne Bleue 3 (Haut du l, b, f, h, k)
+       40px  : Ligne Bleue 2 (Haut du d, t)
+       80px  : Ligne Bleue 1 (Haut du a, c, e...)
+       120px : LIGNE VIOLETTE (Base)
+       160px : Ligne Bleue Bas 1 (p, q) / Bas 2 (f, g, j)
+    */
+    background-image: repeating-linear-gradient(
+        to bottom,
+        
+        /* Ligne 3 (Haut) */
+        #a2d9f7 0px, #a2d9f7 1px, transparent 1px,
+        
+        /* Ligne 2 (Intermédiaire) */
+        transparent 39px, #a2d9f7 40px, #a2d9f7 41px, transparent 41px,
+        
+        /* Ligne 1 (Petit interligne) */
+        transparent 79px, #a2d9f7 80px, #a2d9f7 81px, transparent 81px,
+        
+        /* LIGNE DE BASE VIOLETTE */
+        transparent 119px, #b794f6 120px, #b794f6 123px, transparent 123px,
+        
+        /* Fin du bloc (la suite correspond aux jambages descendants) */
+        transparent 160px
+    );
+    background-size: 100% 160px; 
+    background-position: 0 40px; 
+}
+
+.text-container {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    padding-top: 40px; 
+    padding-left: 40px;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap; 
+    align-content: flex-start;
+}
+
+.letter-box {
+    height: 160px; 
+    display: inline-flex;  
+    align-items: flex-end; 
+    width: auto;           
+    margin-right: 60px; 
+    /* border: 1px solid red; */ /* Décommente pour voir les cases */
+}
+
+.letter-content {
+    position: relative; 
+    white-space: nowrap;
+    user-select: none;
+    line-height: 1;
+}
+
+/* --- RÉGLAGE CURSIF STANDARD (Fichier local) --- */
+.font-cursif .letter-content {
+    font-family: 'MaPoliceScolaire', sans-serif;
+    
+    /* TAILLE : Doit être ajustée selon ton fichier .ttf précis.
+       Pour "Cursive Standard", le corps de lettre est souvent petit par rapport aux boucles.
+       Il faut souvent augmenter la taille. Essaie entre 100px et 140px. 
+    */
+    font-size: 92px; 
+    
+    /* POSITION : Le bas de la lettre doit toucher la ligne violette.
+       La ligne violette est à 40px du bas de la boite.
+       Avec les polices scolaires, la "baseline" est souvent bien gérée.
+       Essaie entre 30px et 45px.
+    */
+    bottom: 19px; 
+    
+    /* Espacement normal pour cursive */
+    letter-spacing: 0px; 
+}
+
+/* --- RÉGLAGE BÂTON (Patrick Hand) --- */
+.font-baton .letter-content {
+    font-family: 'Patrick Hand', sans-serif;
+    font-size: 95px;
+    bottom: 25px; 
+    letter-spacing: 5px;
+}
+
+canvas {
+    position: absolute;
+    top: 0; left: 0;
+    z-index: 10;
+    touch-action: none;
+}
+
+.btn { cursor: pointer; color: white; border: none; font-weight: bold;}
+.nav { background-color: #3498db; }
+.warning { background-color: #e74c3c; }
+.secondary { background-color: #95a5a6; color: white;}
+
+/* --- GESTION DU SAUT DE LIGNE POUR LE "f" --- */
+/* Cette classe est ajoutée via Javascript quand un 'f' est détecté */
+.spread-lines .letter-box {
+    /* On ajoute une marge égale à la hauteur d'une ligne (160px) 
+       Cela force la prochaine lettre à sauter une ligne complète */
+    margin-bottom: 160px;
+}

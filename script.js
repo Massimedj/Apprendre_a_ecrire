@@ -1,0 +1,205 @@
+// --- DONNÉES ---
+const letters = "abcdefghijklmnopqrstuvwxyz".split("");
+const numbers = "0123456789".split("");
+
+// Liste de ~100 mots du quotidien
+const words = [
+    // JOURS
+    "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
+    
+    // MOIS
+    "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
+    "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
+    
+    // SAISONS & NATURE
+    "Printemps", "Ete", "Automne", "Hiver",
+    "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
+    "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
+    
+    // POLITESSE & EMOTIONS
+    "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
+    "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
+    
+    // FAMILLE & ECOLE
+    "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
+    "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
+    "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
+    
+    // ANIMAUX
+    "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
+    "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
+    "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
+    
+    // NOURRITURE
+    "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
+    "Carotte", "Patate", "Tomate", "Salade", "Radis",
+    "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
+    
+    // TRANSPORTS
+    "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
+];
+
+// --- VARIABLES ---
+let currentIndex = 0;
+let currentList = letters;
+let isUpperCase = false;
+let isDrawing = false;
+const canvas = document.getElementById('drawingCanvas');
+const ctx = canvas.getContext('2d');
+const textContainer = document.getElementById('textContainer');
+const sheet = document.getElementById('sheet');
+
+// --- INITIALISATION ---
+function init() {
+    document.getElementById('typeSelect').addEventListener('change', changeType);
+    document.getElementById('styleSelect').addEventListener('change', updateContent);
+    
+    canvas.addEventListener('mousedown', startPosition);
+    canvas.addEventListener('mouseup', endPosition);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', startPosition, {passive: false});
+    canvas.addEventListener('touchend', endPosition);
+    canvas.addEventListener('touchmove', draw, {passive: false});
+    
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        updateContent(); 
+    });
+    
+    resizeCanvas();
+    updateContent();
+}
+
+function resizeCanvas() {
+    canvas.width = sheet.clientWidth;
+    canvas.height = sheet.clientHeight;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#2c3e50'; 
+}
+
+function changeType() {
+    const type = document.getElementById('typeSelect').value;
+    currentIndex = 0;
+    if (type === 'lettres') currentList = letters;
+    else if (type === 'chiffres') currentList = numbers;
+    else if (type === 'mots') currentList = words;
+    updateContent();
+}
+
+function changeCase() {
+    isUpperCase = !isUpperCase;
+    let btn = document.getElementById('btnCase');
+    btn.innerText = isUpperCase ? "Passer en Minuscules" : "Passer en Majuscules";
+    updateContent();
+}
+
+function updateContent() {
+    clearCanvas();
+    textContainer.innerHTML = ''; 
+
+    let rawText = currentList[currentIndex];
+    
+    // Gestion Majuscule/Minuscule
+    let textToShow = rawText;
+    if (isUpperCase) {
+        textToShow = rawText.toUpperCase();
+    } else {
+        if(isNaN(textToShow)) textToShow = rawText.toLowerCase();
+    }
+    
+    const fontStyle = document.getElementById('styleSelect').value;
+    const fontClass = (fontStyle === 'cursif') ? 'font-cursif' : 'font-baton';
+
+    // --- LOGIQUE INTELLIGENTE POUR LE "f" ---
+    // Si on est en Cursif ET que le texte contient la lettre "f"
+    if (fontStyle === 'cursif' && textToShow.toLowerCase().includes('f')) {
+        // On ajoute une classe spéciale au conteneur qui va forcer le saut de ligne
+        textContainer.classList.add('spread-lines');
+    } else {
+        // Sinon on l'enlève pour revenir à la normale
+        textContainer.classList.remove('spread-lines');
+    }
+
+    // ADAPTATION DU NOMBRE DE MOTS
+    let repetitions = 12; 
+    
+    // Si on saute des lignes (mode 'f')
+   
+    if (textContainer.classList.contains('spread-lines')) {
+        repetitions = 12;
+    } else if (textToShow.length > 5) {
+        repetitions = 8;
+    }
+    
+    if (textToShow.length > 8) repetitions = 5;
+
+    // --- BOUCLE DE CRÉATION ---
+    for (let i = 0; i < repetitions; i++) {
+        let opacity = 1;
+        
+        if (i === 0) opacity = 1;         
+        else if (i < 3) opacity = 0.4;    
+        else opacity = 0.08;              
+
+        let box = document.createElement('div');
+        box.className = `letter-box ${fontClass}`;
+        
+        let span = document.createElement('span');
+        span.className = 'letter-content';
+        span.innerText = textToShow;
+        span.style.color = (i===0) ? "black" : `rgba(0, 0, 0, ${opacity})`;
+        
+        box.appendChild(span);
+        textContainer.appendChild(box);
+    }
+}
+	
+function nextItem() {
+    if (currentIndex < currentList.length - 1) {
+        currentIndex++;
+        updateContent();
+    }
+}
+
+function previousItem() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        updateContent();
+    }
+}
+
+function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+}
+
+function startPosition(e) {
+    if(e.target == canvas) e.preventDefault();
+    isDrawing = true;
+    draw(e);
+}
+
+function endPosition() {
+    isDrawing = false;
+    ctx.beginPath();
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    if(e.type.includes('touch')) e.preventDefault();
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+window.onload = init;

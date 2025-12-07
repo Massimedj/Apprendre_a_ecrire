@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>J'écris sur les lignes</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="controls-container">
+        <div class="controls">
+            <select id="typeSelect">
+                <option value="lettres">Lettres (a-z)</option>
+                <option value="chiffres">Chiffres (0-9)</option>
+                <option value="mots">Mots</option>
+            </select>
+
+            <select id="styleSelect">
+                <option value="cursif">Attaché (Cursif)</option>
+                <option value="baton">Bâton (Imprimerie)</option>
+            </select>
+            
+            <button onclick="changeCase()" id="btnCase" class="btn secondary">Majuscules</button>
+        </div>
+        
+        <div class="buttons">
+            <button onclick="previousItem()" class="btn nav">← Préc.</button>
+            <button onclick="clearCanvas()" class="btn warning">Tout Effacer</button>
+            <button onclick="nextItem()" class="btn nav">Suiv. →</button>
+        </div>
+    </div>
+
+    <div class="sheet-container">
+        <div id="sheet" class="sheet">
+            <div id="textContainer" class="text-container"></div>
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

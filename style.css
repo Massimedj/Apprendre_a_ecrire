@@ -1,192 +1,205 @@
-// --- DONNÉES ---
-const letters = "abcdefghijklmnopqrstuvwxyz".split("");
-const numbers = "0123456789".split("");
+/* =========================================
+   1. IMPORTATION DES POLICES
+   ========================================= */
 
-// Liste de ~100 mots du quotidien
-const words = [
-    // JOURS
-    "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-    // MOIS
-    "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
-    "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
-    // SAISONS & NATURE
-    "Printemps", "Ete", "Automne", "Hiver",
-    "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
-    "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
-    // POLITESSE & EMOTIONS
-    "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
-    "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    // FAMILLE & ECOLE
-    "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
-    "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
-    "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
-    // ANIMAUX
-    "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
-    "Lion", "Tigre", "Ours", "Girafe", "Elephant", "Singe",
-    "Oiseau", "Poisson", "Loup", "Renard", "Papillon",
-    // NOURRITURE
-    "Pomme", "Poire", "Banane", "Fraise", "Cerise", "Orange",
-    "Carotte", "Patate", "Tomate", "Salade", "Radis",
-    "Gateau", "Chocolat", "Bonbon", "Pain", "Lait", "Eau",
-    // TRANSPORTS
-    "Velo", "Voiture", "Train", "Avion", "Bateau", "Bus"
-];
-
-// --- VARIABLES ---
-let currentIndex = 0;
-let currentList = letters;
-let isUpperCase = false;
-let isDrawing = false;
-const canvas = document.getElementById('drawingCanvas');
-const ctx = canvas.getContext('2d');
-const textContainer = document.getElementById('textContainer');
-const sheet = document.getElementById('sheet');
-
-// --- INITIALISATION ---
-function init() {
-    document.getElementById('typeSelect').addEventListener('change', changeType);
-    document.getElementById('styleSelect').addEventListener('change', updateContent);
-    
-    canvas.addEventListener('mousedown', startPosition);
-    canvas.addEventListener('mouseup', endPosition);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('touchstart', startPosition, {passive: false});
-    canvas.addEventListener('touchend', endPosition);
-    canvas.addEventListener('touchmove', draw, {passive: false});
-    
-    window.addEventListener('resize', () => {
-        resizeCanvas();
-        updateContent(); 
-    });
-    
-    resizeCanvas();
-    updateContent();
+/* Police Cursive Locale (doit être dans le même dossier) */
+@font-face {
+    font-family: 'MaPoliceScolaire';
+    src: url('cursive.ttf') format('truetype');
 }
 
-function resizeCanvas() {
-    canvas.width = sheet.clientWidth;
-    canvas.height = sheet.clientHeight;
-    // Trait plus épais car zoomé
-    ctx.lineWidth = 8; 
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#2c3e50'; 
+/* Police Bâton (Google Fonts) */
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+/* =========================================
+   2. MISE EN PAGE GÉNÉRALE (BODY)
+   ========================================= */
+body {
+    font-family: sans-serif;
+    background-color: #2c3e50; /* Fond gris foncé pour l'application */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden; /* Empêche le scroll sur la page globale */
 }
 
-function changeType() {
-    const type = document.getElementById('typeSelect').value;
-    currentIndex = 0;
-    if (type === 'lettres') currentList = letters;
-    else if (type === 'chiffres') currentList = numbers;
-    else if (type === 'mots') currentList = words;
-    updateContent();
+/* =========================================
+   3. BARRE DE CONTRÔLES (HAUT)
+   ========================================= */
+.controls-container {
+    width: 100%;
+    background-color: #ecf0f1;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 20; /* Reste au-dessus de tout */
 }
 
-function changeCase() {
-    isUpperCase = !isUpperCase;
-    let btn = document.getElementById('btnCase');
-    btn.innerText = isUpperCase ? "Passer en Minuscules" : "Passer en Majuscules";
-    updateContent();
+.controls, .buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
-function updateContent() {
-    clearCanvas();
-    textContainer.innerHTML = ''; 
+select, button {
+    padding: 10px 15px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #bdc3c7;
+    background: white;
+    cursor: pointer;
+}
 
-    let rawText = currentList[currentIndex];
-    
-    let textToShow = rawText;
-    if (isUpperCase) {
-        textToShow = rawText.toUpperCase();
-    } else {
-        if(isNaN(textToShow)) textToShow = rawText.toLowerCase();
-    }
-    
-    const fontStyle = document.getElementById('styleSelect').value;
-    const fontClass = (fontStyle === 'cursif') ? 'font-cursif' : 'font-baton';
+/* Couleurs spécifiques des boutons */
+.btn { color: white; border: none; font-weight: bold;}
+.nav { background-color: #3498db; }    /* Bleu */
+.warning { background-color: #e74c3c; } /* Rouge */
+.secondary { background-color: #95a5a6; color: white;} /* Gris */
 
-    // DETECTION DU "f" POUR SAUT DE LIGNE
-    if (fontStyle === 'cursif' && textToShow.toLowerCase().includes('f')) {
-        textContainer.classList.add('spread-lines');
-    } else {
-        textContainer.classList.remove('spread-lines');
-    }
+/* =========================================
+   4. LA FEUILLE D'ÉCRITURE (ZONE PRINCIPALE)
+   ========================================= */
+.sheet-container {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow-y: auto; /* Permet de scroller verticalement dans la feuille */
+    padding: 20px;
+    box-sizing: border-box;
+    background-color: #34495e;
+}
 
-    // Nombre de répétitions adapté au ZOOM
-    let repetitions = 8; // Défaut réduit (c'était 12)
+.sheet {
+    position: relative;
+    width: 95vw;     /* Largeur de la feuille (presque tout l'écran) */
+    min-height: 80vh; 
+    background-color: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    cursor: crosshair; /* Curseur en forme de croix pour dessiner */
     
-    if (textContainer.classList.contains('spread-lines')) {
-        repetitions = 4; // Si on saute des lignes, on en met très peu
-    } else if (textToShow.length > 5) {
-        repetitions = 5;
-    }
-    
-    if (textToShow.length > 8) repetitions = 3;
-
-    for (let i = 0; i < repetitions; i++) {
-        let opacity = 1;
+    /* --- LIGNAGE SEYÈS SUPER GÉANT --- 
+       Hauteur totale d'un bloc : 280px
+       Interligne (espace entre petites lignes) : 70px
+       
+       0px   : Ligne Bleue 3 (Haut)
+       70px  : Ligne Bleue 2
+       140px : Ligne Bleue 1
+       210px : LIGNE VIOLETTE (Base d'écriture)
+       280px : Fin du bloc
+    */
+    background-image: repeating-linear-gradient(
+        to bottom,
         
-        if (i === 0) opacity = 1;         
-        else if (i < 3) opacity = 0.4;    
-        else opacity = 0.08;              
-
-        let box = document.createElement('div');
-        box.className = `letter-box ${fontClass}`;
+        /* Ligne Bleue 3 (Haut du l, b) */
+        #a2d9f7 0px, #a2d9f7 2px, transparent 2px,
         
-        let span = document.createElement('span');
-        span.className = 'letter-content';
-        span.innerText = textToShow;
-        span.style.color = (i===0) ? "black" : `rgba(0, 0, 0, ${opacity})`;
+        /* Ligne Bleue 2 (Haut du d, t) - à 70px */
+        transparent 68px, #a2d9f7 70px, #a2d9f7 72px, transparent 72px,
         
-        box.appendChild(span);
-        textContainer.appendChild(box);
-    }
+        /* Ligne Bleue 1 (Haut du a, c) - à 140px */
+        transparent 138px, #a2d9f7 140px, #a2d9f7 142px, transparent 142px,
+        
+        /* LIGNE VIOLETTE (Base) - à 210px - Plus épaisse */
+        transparent 208px, #b794f6 210px, #b794f6 214px, transparent 214px,
+        
+        /* Fin du motif à 280px */
+        transparent 280px
+    );
+    
+    background-size: 100% 280px; /* Force la répétition exacte tous les 280px */
+    background-position: 0 40px; /* Petite marge en haut de la page */
 }
 
-function nextItem() {
-    if (currentIndex < currentList.length - 1) {
-        currentIndex++;
-        updateContent();
-    }
+/* =========================================
+   5. CONTENEUR DU TEXTE ET DES BOÎTES
+   ========================================= */
+.text-container {
+    position: absolute;
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%;
+    
+    /* Marges intérieures pour s'aligner avec le background-position */
+    padding-top: 40px; 
+    padding-left: 40px;
+    
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap; /* Permet d'aller à la ligne automatiquement */
+    align-content: flex-start;
 }
 
-function previousItem() {
-    if (currentIndex > 0) {
-        currentIndex--;
-        updateContent();
-    }
+/* La boîte qui contient une lettre ou un mot */
+.letter-box {
+    height: 280px; /* Doit être égal à la hauteur du motif de fond */
+    display: inline-flex; /* La largeur s'adapte au mot */
+    align-items: flex-end; /* On pose le texte en bas de la boîte */
+    width: auto;           
+    margin-right: 60px; /* Espace entre les exercices */
+    
+    /* Pour débugger, tu peux décommenter la ligne ci-dessous : */
+    /* border: 1px dashed red; */
 }
 
-function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
+/* --- GESTION SPÉCIALE DU 'f' --- */
+/* Ajoute une marge énorme sous la boîte pour sauter une ligne complète */
+.spread-lines .letter-box {
+    margin-bottom: 280px; 
 }
 
-function startPosition(e) {
-    if(e.target == canvas) e.preventDefault();
-    isDrawing = true;
-    draw(e);
+/* Le texte lui-même */
+.letter-content {
+    position: relative; 
+    white-space: nowrap; /* Empêche le mot de se couper */
+    user-select: none;
+    line-height: 1;
 }
 
-function endPosition() {
-    isDrawing = false;
-    ctx.beginPath();
+/* =========================================
+   6. RÉGLAGES PRÉCIS DES POLICES (ZOOM GÉANT)
+   ========================================= */
+
+/* --- Cursif (Ta police locale) --- */
+.font-cursif .letter-content {
+    font-family: 'MaPoliceScolaire', sans-serif;
+    
+    /* Taille très grande */
+    font-size: 160px; 
+    
+    /* Position verticale : 
+       La ligne violette est à 70px du bas de la boîte (280 - 210 = 70).
+       Il faut ajuster 'bottom' pour que le bas de la lettre touche la ligne.
+    */
+    bottom: 35px; 
+    
+    letter-spacing: 0px; 
 }
 
-function draw(e) {
-    if (!isDrawing) return;
-    if(e.type.includes('touch')) e.preventDefault();
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
+/* --- Bâton (Patrick Hand) --- */
+.font-baton .letter-content {
+    font-family: 'Patrick Hand', sans-serif;
+    
+    font-size: 170px; 
+    bottom: 45px; /* Le bâton nécessite souvent d'être remonté un peu plus */
+    
+    letter-spacing: 5px; /* Un peu d'air entre les lettres bâtons */
 }
 
-function clearCanvas() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* =========================================
+   7. LE CANVAS DE DESSIN
+   ========================================= */
+canvas {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    z-index: 10; /* Au-dessus du texte */
+    touch-action: none; /* Indispensable pour que le tactile ne scrolle pas */
 }
-
-window.onload = init;

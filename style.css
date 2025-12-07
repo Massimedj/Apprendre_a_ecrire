@@ -38,7 +38,7 @@ body {
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     z-index: 20;
     /* Marge en haut pour laisser la place à la barre d'outils flottante */
-    margin-top: 60px; 
+    margin-top: 100px; 
 }
 
 .controls, .buttons {
@@ -247,3 +247,4 @@ canvas {
     /* Curseur stylo */
     cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewport="0 0 24 24" fill="black"><circle cx="12" cy="12" r="2"/></svg>') 12 12, auto; 
 }
+

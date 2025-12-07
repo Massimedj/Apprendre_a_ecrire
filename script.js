@@ -9,14 +9,14 @@ const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
 const words = [
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
-    "Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin", 
-    "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre",
-    "Printemps", "Ete", "Automne", "Hiver",
-    "Soleil", "Lune", "Etoile", "Nuage", "Pluie", "Neige", "Vent",
+    "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
+    "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre",
+    "Printemps", "Été", "Automne", "Hiver",
+    "Soleil", "Lune", "Étoile", "Nuage", "Pluie", "Neige", "Vent",
     "Fleur", "Arbre", "Feuille", "Herbe", "Jardin",
     "Bonjour", "Bonsoir", "Merci", "Pardon", "Bravo", "Aurevoir",
     "Joie", "Rire", "Bisou", "Calin", "Amour", "Gentil",
-    "Maman", "Papa", "Bebe", "Papi", "Mamie", "Frere", "Soeur", 
+    "Maman", "Papa", "Bébé", "Papi", "Mamie", "Frere", "Sœur", 
     "Maison", "Ecole", "Maitresse", "Stylo", "Crayon", "Livre", "Cahier",
     "Table", "Chaise", "Lit", "Porte", "Jouet", "Ballon",
     "Chat", "Chien", "Lapin", "Cheval", "Vache", "Poule", "Cochon",
@@ -208,4 +208,5 @@ function clearCanvas() {
 }
 
 window.onload = init;
+
 

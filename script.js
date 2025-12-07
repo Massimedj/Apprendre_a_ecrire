@@ -1,10 +1,12 @@
 // --- VARIABLES GLOBALES ---
-let currentMode = 'scroll';
+let currentMode = 'scroll';   // 'scroll' ou 'write'
+let currentTool = 'pen';      // NOUVEAU : 'pen' (crayon) ou 'eraser' (gomme)
 let palmRejection = false;
-let pointsBuffer = []; // Tampon pour stocker les points avant de les dessiner
+let pointsBuffer = []; 
 let isDrawing = false;
-let lastPos = { x: 0, y: 0 }; // Dernière position connue pour lier les traits
+let lastPos = { x: 0, y: 0 }; 
 
+// (Vos listes letters, numbers, words restent ici...)
 const letters = "abcdefghijklmnopqrstuvwxyz".split("");
 const numbers = "0123456789".split("");
 const words = [
@@ -42,55 +44,78 @@ function init() {
     document.getElementById('typeSelect').addEventListener('change', changeType);
     document.getElementById('styleSelect').addEventListener('change', updateContent);
     
-    // GESTION DU DESSIN (POINTER EVENTS)
     canvas.addEventListener('pointerdown', startPosition);
-    // On utilise 'window' pour pointerup/out pour être sûr de capturer le relâchement même hors canvas
     window.addEventListener('pointerup', endPosition);
-    canvas.addEventListener('pointermove', collectPoints); // On ne dessine pas, on collecte
+    canvas.addEventListener('pointermove', collectPoints); 
     window.addEventListener('pointercancel', endPosition);
     
     window.addEventListener('resize', () => { resizeCanvas(); });
     
-    setMode('scroll');
+    // Configuration initiale du canvas
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    setMode('scroll');     // On commence en mode scroll
+    setTool('pen');        // Outil par défaut : crayon
     updateContent(); 
     
-    // Démarrage de la boucle de dessin haute performance
     drawFrame();
 }
 
-// --- BOUCLE DE DESSIN (RENDU) ---
-// Cette fonction tourne en boucle 60 fois par seconde
+// --- BOUCLE DE DESSIN (C'EST ICI QUE LA MAGIE OPÈRE) ---
 function drawFrame() {
-    // S'il y a des points en attente dans le tampon
     if (pointsBuffer.length > 0) {
         ctx.beginPath();
-        ctx.moveTo(lastPos.x, lastPos.y); // On part du dernier point connu
+        ctx.moveTo(lastPos.x, lastPos.y);
 
-        // On trace des lignes vers tous les nouveaux points collectés
         for (let i = 0; i < pointsBuffer.length; i++) {
             ctx.lineTo(pointsBuffer[i].x, pointsBuffer[i].y);
         }
         
-        ctx.stroke(); // On dessine tout d'un coup (beaucoup plus rapide)
+        // --- CHANGEMENT MAJEUR ICI POUR LA GOMME ---
+        if (currentTool === 'eraser') {
+            // Mode GOMME : "destination-out" rend transparent ce qu'on touche
+            ctx.globalCompositeOperation = "destination-out";
+            // La gomme est plus grosse que le crayon pour être pratique
+            ctx.lineWidth = 40; 
+        } else {
+            // Mode CRAYON : "source-over" dessine par dessus (normal)
+            ctx.globalCompositeOperation = "source-over";
+            ctx.lineWidth = 12; // Taille normale du trait
+            ctx.strokeStyle = '#2c3e50'; // Couleur du trait
+        }
+        // -------------------------------------------
         
-        // On met à jour la dernière position connue avec le dernier point du tampon
+        ctx.stroke(); 
+        
         lastPos = pointsBuffer[pointsBuffer.length - 1];
-        // On vide le tampon pour le prochain tour
         pointsBuffer = [];
     }
 
-    // On demande au navigateur de rappeler cette fonction à la prochaine image
     requestAnimationFrame(drawFrame);
 }
 
 
-// --- GESTION DES MODES ---
+// --- GESTION DES MODES ET OUTILS ---
 function setMode(mode) {
     currentMode = mode;
     document.getElementById('btnScroll').className = (mode === 'scroll') ? 'tool-btn active' : 'tool-btn';
     document.getElementById('btnWrite').className = (mode === 'write') ? 'tool-btn active' : 'tool-btn';
-    document.getElementById('palmOption').style.display = (mode === 'write') ? 'flex' : 'none';
+    
+    // On affiche les outils d'écriture (crayon/gomme/palm) seulement si on est en mode "Écrire"
+    const displayStyle = (mode === 'write') ? 'flex' : 'none';
+    document.getElementById('writingTools').style.display = displayStyle;
+    document.getElementById('palmOption').style.display = displayStyle;
+
     if (mode === 'write') { sheet.classList.add('write-mode'); } else { sheet.classList.remove('write-mode'); }
+}
+
+// NOUVELLE FONCTION POUR CHOIISIR CRAYON OU GOMME
+function setTool(tool) {
+    currentTool = tool;
+    // Met à jour visuellement les boutons
+    document.getElementById('btnPen').className = (tool === 'pen') ? 'tool-btn sub-tool active' : 'tool-btn sub-tool';
+    document.getElementById('btnEraser').className = (tool === 'eraser') ? 'tool-btn sub-tool active' : 'tool-btn sub-tool';
 }
 
 function updatePalm() {
@@ -106,25 +131,21 @@ function getPos(e) {
 function startPosition(e) {
     if (currentMode !== 'write') return;
     if (palmRejection && e.pointerType !== 'pen') return;
-    // Pour les stylets passifs, on accepte 'touch' si palmRejection est faux
     if (!palmRejection && e.pointerType !== 'pen' && e.pointerType !== 'touch') return; 
 
     e.preventDefault(); 
     isDrawing = true;
-    
-    // On définit le point de départ
     lastPos = getPos(e);
-    pointsBuffer.push(lastPos); // On l'ajoute au tampon pour le dessiner tout de suite
+    pointsBuffer.push(lastPos);
 }
 
 function endPosition(e) {
     if(isDrawing) {
         isDrawing = false;
-        pointsBuffer = []; // On vide le tampon par sécurité
+        pointsBuffer = []; 
     }
 }
 
-// Cette fonction ne dessine PAS, elle stocke juste les points très vite
 function collectPoints(e) {
     if (!isDrawing) return;
     if (currentMode !== 'write') return;
@@ -133,14 +154,10 @@ function collectPoints(e) {
 
     e.preventDefault();
 
-    // Récupération des points "cachés" (haute précision)
     if (e.getCoalescedEvents) {
         let events = e.getCoalescedEvents();
-        for(let event of events) {
-            pointsBuffer.push(getPos(event));
-        }
+        for(let event of events) pointsBuffer.push(getPos(event));
     } else {
-        // Fallback si la tablette ne supporte pas coalesced events
         pointsBuffer.push(getPos(e));
     }
 }
@@ -150,7 +167,7 @@ function collectPoints(e) {
 function resizeCanvas() {
     canvas.width = sheet.clientWidth;
     canvas.height = sheet.clientHeight;
-    ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#2c3e50'; 
+    // Les propriétés de style de trait sont maintenant gérées dans drawFrame
 }
 
 function changeType() {
@@ -170,7 +187,14 @@ function changeCase() {
 
 function updateContent() {
     textContainer.innerHTML = ''; 
-    setTimeout(() => { resizeCanvas(); ctx.clearRect(0, 0, canvas.width, canvas.height); pointsBuffer = [];}, 50);
+    // On réinitialise le canvas et le mode de fusion
+    setTimeout(() => { 
+        resizeCanvas(); 
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        pointsBuffer = [];
+        // Important : reset du mode de composition par défaut après un clear
+        ctx.globalCompositeOperation = "source-over";
+    }, 50);
 
     let rawText = currentList[currentIndex];
     let textToShow = isUpperCase ? rawText.toUpperCase() : (isNaN(rawText) ? rawText.toLowerCase() : rawText);
@@ -200,6 +224,10 @@ function updateContent() {
 
 function nextItem() { if (currentIndex < currentList.length - 1) { currentIndex++; updateContent(); } }
 function previousItem() { if (currentIndex > 0) { currentIndex--; updateContent(); } }
-function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); pointsBuffer = []; }
+// Le bouton "Effacer" efface tout d'un coup
+function clearCanvas() { 
+    ctx.clearRect(0, 0, canvas.width, canvas.height); 
+    pointsBuffer = [];
+}
 
 window.onload = init;

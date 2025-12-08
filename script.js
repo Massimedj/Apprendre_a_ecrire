@@ -28,7 +28,6 @@ const words = [
     "Vélo", "Voiture", "Train", "Avion", "Bateau", "Bus"
 ];
 
-
 let currentIndex = 0;
 let currentList = letters;
 let isUpperCase = false;
@@ -59,22 +58,14 @@ function init() {
     updateContent(); 
 }
 
-// --- SYNTHÈSE VOCALE (NOUVEAU) ---
+// --- SYNTHÈSE VOCALE ---
 function readContent() {
-    // On annule si une lecture est déjà en cours
     window.speechSynthesis.cancel();
-
     let rawText = currentList[currentIndex];
-    
-    // Création du message vocal
     let utterance = new SpeechSynthesisUtterance(rawText);
-    
-    // Configuration en Français
     utterance.lang = 'fr-FR'; 
-    utterance.rate = 0.8; // Vitesse un peu lente (0.8) pour bien comprendre
-    utterance.pitch = 1;  // Tonalité normale
-    
-    // Lancer la lecture
+    utterance.rate = 0.8; 
+    utterance.pitch = 1;  
     window.speechSynthesis.speak(utterance);
 }
 
@@ -170,7 +161,7 @@ function changeType() {
 
 function changeCase() {
     isUpperCase = !isUpperCase;
-    document.getElementById('btnCase').innerText = isUpperCase ? "Min" : "Maj";
+    document.getElementById('btnCase').innerText = isUpperCase ? "miniscule" : "MAJUSCULE";
     updateContent();
 }
 
@@ -212,8 +203,7 @@ function nextItem() {
     if (currentIndex < currentList.length - 1) { 
         currentIndex++; 
         updateContent(); 
-        // Lecture automatique au changement
-        setTimeout(readContent, 200);
+        // J'ai supprimé la ligne de lecture automatique ici
     } 
 }
 
@@ -221,8 +211,7 @@ function previousItem() {
     if (currentIndex > 0) { 
         currentIndex--; 
         updateContent(); 
-        // Lecture automatique au changement
-        setTimeout(readContent, 200);
+        // J'ai supprimé la ligne de lecture automatique ici aussi
     } 
 }
 

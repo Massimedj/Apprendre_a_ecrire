@@ -6,7 +6,13 @@ let isDrawing = false;
 
 // Listes de contenu
 const letters = "abcdefghijklmnopqrstuvwxyz".split("");
-const numbers = "0123456789".split("");
+
+// MODIFICATION ICI : Création automatique des nombres de 0 à 50
+const numbers = [];
+for (let i = 0; i <= 50; i++) {
+    numbers.push(i.toString());
+}
+
 const words = [
     "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche",
     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", 
@@ -161,6 +167,7 @@ function changeType() {
 
 function changeCase() {
     isUpperCase = !isUpperCase;
+    // J'ai gardé vos labels personnalisés
     document.getElementById('btnCase').innerText = isUpperCase ? "miniscule" : "MAJUSCULE";
     updateContent();
 }
@@ -174,6 +181,8 @@ function updateContent() {
     }, 50);
 
     let rawText = currentList[currentIndex];
+    
+    // Logique pour majuscule/minuscule (ne touche pas aux chiffres)
     let textToShow = isUpperCase ? rawText.toUpperCase() : (isNaN(rawText) ? rawText.toLowerCase() : rawText);
     
     const fontStyle = document.getElementById('styleSelect').value;
@@ -203,7 +212,6 @@ function nextItem() {
     if (currentIndex < currentList.length - 1) { 
         currentIndex++; 
         updateContent(); 
-        // J'ai supprimé la ligne de lecture automatique ici
     } 
 }
 
@@ -211,7 +219,6 @@ function previousItem() {
     if (currentIndex > 0) { 
         currentIndex--; 
         updateContent(); 
-        // J'ai supprimé la ligne de lecture automatique ici aussi
     } 
 }
 
